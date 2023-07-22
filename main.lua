@@ -1,12 +1,6 @@
-local green_hill_data = require('graphics/levels/green_hill/data')
-local green_hill_img = love.graphics.newImage('/graphics/levels/green_hill/greenhillzone.png')
-local first = green_hill_data[1]
-local second = green_hill_data[2]
----@diagnostic disable-next-line: missing-parameter, param-type-mismatch
-local first_piece = love.graphics.newQuad(first.x_pos, first.y_pos, first.width, first.height, green_hill_img)
----@diagnostic disable-next-line: missing-parameter, param-type-mismatch
-local second_piece = love.graphics.newQuad(second.x_pos, second.y_pos, second.width, second.height, green_hill_img)
-local SCALE = 2.5
+local SONIC_FRAME_DATA = require('graphics/characters/sonic/data')
+local SONIC_IMG = love.graphics.newImage('graphics/characters/sonic/sonic1_sonic.png')
+local SCALE = 3.5
 local CAMERA_OFFSET = { x = 0, y = 0 }
 local ARROW_ISDOWN = {
     up = false,
@@ -20,6 +14,12 @@ local PLAYER = {
     x = 0,
     y = 0
 }
+local SONIC_ANIM_GROUP_NAMES = {
+    IDLE = 'idle'
+}
+local CURRENT_QUAD = nil
+
+local CURRENT_SONIC_FRAME = nil
 local TESTFLOOR = {
     0, 418,
     354, 422,
@@ -38,104 +38,49 @@ local TESTFLOOR = {
 
 function love.load()
     love.graphics.setBackgroundColor(0.4, 0.6, 0.5, 1)
+    CURRENT_SONIC_FRAME = Get_Sonic_Frame(SONIC_FRAME_DATA, SONIC_ANIM_GROUP_NAMES.IDLE, 1)
+    CURRENT_QUAD = love.graphics.newQuad(CURRENT_SONIC_FRAME.x_pos, CURRENT_SONIC_FRAME.y_pos, CURRENT_SONIC_FRAME.width,
+        CURRENT_SONIC_FRAME.height, SONIC_IMG)
 end
 
 function love.draw(t)
-    love.graphics.setColor(0.2, 0.3, 0.7, 1)
-    love.graphics.polygon("fill", TESTFLOOR)
-    love.graphics.setColor(0.4, 0.4, 0.4, 1)
-    love.graphics.rectangle('fill', PLAYER.x - CAMERA_OFFSET.x, PLAYER.y - CAMERA_OFFSET.y, PLAYER.width, PLAYER.height)
+    love.graphics.scale(SCALE, SCALE)
+    love.graphics.draw(SONIC_IMG, CURRENT_QUAD, 0, 0)
 end
 
 function love.update(t)
-    if ARROW_ISDOWN.up == true then
-        CAMERA_OFFSET.y = CAMERA_OFFSET.y - 1
-    end
-    if ARROW_ISDOWN.down == true then
-        CAMERA_OFFSET.y = CAMERA_OFFSET.y + 1
-    end
-    if ARROW_ISDOWN.left == true then
-        CAMERA_OFFSET.x = CAMERA_OFFSET.x - 1
-    end
-    if ARROW_ISDOWN.right == true then
-        CAMERA_OFFSET.x = CAMERA_OFFSET.x + 1
-    end
-    if IsArrowKeydown() then
-        LevelFunc(TESTFLOOR)
-    end
+
 end
 
 function love.keypressed(key)
-    if (key == 'up') then
-        if ARROW_ISDOWN.down then
-            return
-        end
-        ARROW_ISDOWN.up = true
-        print('up')
-    end
-    if (key == 'down') then
-        if ARROW_ISDOWN.up then
-            return
-        end
-        ARROW_ISDOWN.down = true
-        print('down')
-    end
-    if (key == 'left') then
-        if ARROW_ISDOWN.right then
-            return
-        end
-        ARROW_ISDOWN.left = true
-        print('left')
-    end
-    if (key == 'right') then
-        if ARROW_ISDOWN.left then
-            return
-        end
-        ARROW_ISDOWN.right = true
-        print('right')
-    end
+
 end
 
 function love.keyreleased(key)
-    if (key == 'up') then
-        ARROW_ISDOWN.up = false
-        print('up released')
-    end
-    if (key == 'down') then
-        ARROW_ISDOWN.down = false
-        print('down released')
-    end
-    if (key == 'left') then
-        ARROW_ISDOWN.left = false
-        print('left released')
-    end
-    if (key == 'right') then
-        ARROW_ISDOWN.right = false
-        print('right released')
-    end
+
 end
 
------------------
-function LevelFunc(table)
-    if (type(table) ~= 'table') then
-        error("first arg must be a table")
+-------------
+function Get_Sonic_Frame(t, k, index)
+    if type(t) ~= 'table' then
+        error("first arg must be table")
     end
-    for index, value in pairs(table) do
-        if index % 2 > 0 then
-            table[index] = value - CAMERA_OFFSET.x
-        else
-            table[index] = value - CAMERA_OFFSET.y
-        end
+
+    if not Key_In_Table_Check(t, k) then
+        error("second arg key does not exist in sonic frames data")
     end
+
+    if index > #SONIC_FRAME_DATA[k] then
+        error("index is larger than length of subtable")
+    end
+
+
+    local x = t[k][index]
+    x['index'] = index
+
+    return x
 end
 
-function IsArrowKeydown()
-    local isDown = false
-    for k, v in pairs(ARROW_ISDOWN) do
-        if v == true then
-            isDown = true
-            break
-        end
-    end
-    return isDown
+function Key_In_Table_Check(t, key)
+    return t[key] ~= nil
 end
